@@ -10,4 +10,4 @@ permissions:
 
 jobs:
   autolink:
-    uses: ahmdigital/.github/jobs/autolink_pr.yml@main
+    uses: ahmdigital/.github/workflows/autolink_pr.yml@main
