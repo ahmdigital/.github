@@ -4,6 +4,7 @@ on:
   pull_request:
     types: [opened]
   workflow_call:
+  merge_group:
 
 permissions:
   pull-requests: write
