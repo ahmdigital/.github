@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Show debug info
         run: |
-          echo ${ github.event_name }
+          echo ${{ github.event_name }}
   # autolink:
   #   name: Add Jira Link to PR Title/Description
   #   runs-on: ubuntu-latest
