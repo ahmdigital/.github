@@ -13,7 +13,8 @@ jobs:
   autolink:
     name: Test Data
     steps:
-      run: echo ${{ github.event_name }}
+      run: |
+        echo ${ github.event_name }
   # autolink:
   #   name: Add Jira Link to PR Title/Description
   #   runs-on: ubuntu-latest
