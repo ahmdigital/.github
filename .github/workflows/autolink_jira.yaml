@@ -26,3 +26,9 @@ jobs:
             ---
           body-update-action: "prefix"
           body-uppercase-base-match: false
+  forceSuccess:
+    name: Force Success
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'merge_group' }}
+    steps:
+      - run: exit 0
