@@ -13,7 +13,7 @@ jobs:
   autolink:
     name: Add Jira Link to PR Title/Description
     runs-on: ubuntu-latest
-    continue-on-error: true
+    if: ${{ github.event_name == 'pull_request' }}
     steps:
       - uses: tzkhan/pr-update-action@v2
         with:
@@ -26,3 +26,10 @@ jobs:
             ---
           body-update-action: "prefix"
           body-uppercase-base-match: false
+  forceSuccess:
+    name: Force Success
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'merge_group' }}
+    steps:
+      - name: Force Success
+        run: exit 0
