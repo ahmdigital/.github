@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   autolink:
+    runs-on: ubuntu-latest
     name: Test Data
     steps:
       - name: Show debug info
