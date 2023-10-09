@@ -13,6 +13,7 @@ jobs:
   autolink:
     name: Add Jira Link to PR Title/Description
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
     steps:
       - uses: tzkhan/pr-update-action@v2
         with:
