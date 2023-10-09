@@ -2,7 +2,7 @@ name: PR Jira Autolink
 
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened]
   workflow_call:
   merge_group:
 
@@ -11,31 +11,25 @@ permissions:
 
 jobs:
   autolink:
+    name: Add Jira Link to PR Title/Description
     runs-on: ubuntu-latest
-    name: Test Data
+    if: ${{ github.event_name == 'pull_request' }}
     steps:
-      - name: Show debug info
-        run: |
-          echo ${{ github.event_name }}
-  # autolink:
-  #   name: Add Jira Link to PR Title/Description
-  #   runs-on: ubuntu-latest
-  #   if: ${{ github.event_name != 'pull_request' }}
-  #   steps:
-  #     - uses: tzkhan/pr-update-action@v2
-  #       with:
-  #         repo-token: "${{ secrets.GITHUB_TOKEN }}"
-  #         base-branch-regex: '[A-Za-z\d-_.\\/]+'
-  #         head-branch-regex: '^([A-Za-z])+-\d+'
-  #         title-template: "%headbranch%: "
-  #         body-template: |
-  #           Jira issue: [%headbranch%](https://medibank.atlassian.net/browse/%headbranch%)
-  #           ---
-  #         body-update-action: "prefix"
-  #         body-uppercase-base-match: false
-  # forceSuccess:
-  #   name: Force Success
-  #   runs-on: ubuntu-latest
-  #   if: ${{ github.event_name == 'merge_group' }}
-  #   steps:
-  #     - run: exit 0
+      - uses: tzkhan/pr-update-action@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          base-branch-regex: '[A-Za-z\d-_.\\/]+'
+          head-branch-regex: '^([A-Za-z])+-\d+'
+          title-template: "%headbranch%: "
+          body-template: |
+            Jira issue: [%headbranch%](https://medibank.atlassian.net/browse/%headbranch%)
+            ---
+          body-update-action: "prefix"
+          body-uppercase-base-match: false
+  forceSuccess:
+    name: Force Success
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'merge_group' }}
+    steps:
+      - name: Force Success
+        run: exit 0
