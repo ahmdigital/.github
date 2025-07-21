@@ -16,17 +16,30 @@ jobs:
     if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '([A-Za-z]{2,3}-\\d{1,5})') }}
 
     steps:
+      - name: Check PR Title for Template
+        id: check_title
+        run: |
+          if [[ "${{ github.event.pull_request.title }}" == *": "* ]]; then
+            echo "contains_template=true" >> $GITHUB_OUTPUT
+          else
+            echo "contains_template=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if Title Contains Template
+        if: steps.check_title.outputs.contains_template == 'true'
+        run: echo "PR title already contains template, skipping update." && exit 0
+
       - uses: tzkhan/pr-update-action@v2
         with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          base-branch-regex: '[A-Za-z\d-_.\\/]+'
-          head-branch-regex: '([A-Za-z]{2,3})-(\d{1,5})'
-          title-template: "%headbranch%: "
-          body-template: |
-            Jira issue: [%headbranch%](https://medibank.atlassian.net/browse/%headbranch%)
-            ---
-          body-update-action: "prefix"
-          body-uppercase-base-match: false
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        base-branch-regex: '[A-Za-z\d-_.\\/]+'
+        head-branch-regex: '([A-Za-z]{2,3})-(\d{1,5})'
+        title-template: "%headbranch%: "
+        body-template: |
+          Jira issue: [%headbranch%](https://medibank.atlassian.net/browse/%headbranch%)
+          ---
+        body-update-action: "prefix"
+        body-uppercase-base-match: false
   forceSuccess:
     name: Force Success
     runs-on: ubuntu-latest
