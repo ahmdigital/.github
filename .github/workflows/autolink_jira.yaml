@@ -31,15 +31,15 @@ jobs:
 
       - uses: tzkhan/pr-update-action@v2
         with:
-        repo-token: "${{ secrets.GITHUB_TOKEN }}"
-        base-branch-regex: '[A-Za-z\d-_.\\/]+'
-        head-branch-regex: '([A-Za-z]{2,3})-(\d{1,5})'
-        title-template: "%headbranch%: "
-        body-template: |
-          Jira issue: [%headbranch%](https://medibank.atlassian.net/browse/%headbranch%)
-          ---
-        body-update-action: "prefix"
-        body-uppercase-base-match: false
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          base-branch-regex: '[A-Za-z\d-_.\\/]+'
+          head-branch-regex: '([A-Za-z]{2,3})-(\d{1,5})'
+          title-template: "%headbranch%: "
+          body-template: |
+            Jira issue: [%headbranch%](https://medibank.atlassian.net/browse/%headbranch%)
+            ---
+          body-update-action: "prefix"
+          body-uppercase-base-match: false
   forceSuccess:
     name: Force Success
     runs-on: ubuntu-latest
