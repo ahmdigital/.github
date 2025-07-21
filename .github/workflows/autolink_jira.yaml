@@ -13,7 +13,7 @@ jobs:
   autolink:
     name: Add Jira Link to PR Title/Description
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' && !startsWith(github.event.pull_request.title, format('{0}-', github.event.pull_request.head.ref | regex_replace('^([A-Za-z]{2,4}-\d{1,5}).*', '$1'))) }}
+    if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '([A-Za-z]{2,3}-\\d{1,5})') }}
 
     steps:
       - uses: tzkhan/pr-update-action@v2
