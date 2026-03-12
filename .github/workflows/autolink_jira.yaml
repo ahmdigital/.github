@@ -42,9 +42,11 @@ jobs:
     if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.title, '([A-Za-z]{2,4}-\\d{1,5})') }}
     steps:
       - name: Confirm literal pattern found
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "✓ SUCCESS: contains() found the literal regex string '([A-Za-z]{2,4}-\\d{1,5})'"
-          echo "PR Title: ${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
           echo "This means the title literally contains the text: ([A-Za-z]{2,4}-\\d{1,5})"
 
   forceSuccess:
