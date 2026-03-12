@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - uses: tzkhan/pr-update-action@v2
-        name: Update PR Title with Jira Issue
+        name: Add Jira Ticket to PR Title
         if: ${{ !contains(github.event.pull_request.title, '([A-Za-z]{2,4}-\\d{1,5})') }}
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
@@ -26,7 +26,7 @@ jobs:
           title-update-action: "prefix"
       
       - uses: tzkhan/pr-update-action@v2
-        name: Add Jira Issue to PR Body
+        name: Add Jira Ticket to PR Body
         if: ${{ !contains(github.event.pull_request.body, 'Jira issue:') }}
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
@@ -35,6 +35,19 @@ jobs:
             Jira issue: [%headbranch%](https://medibank.atlassian.net/browse/%headbranch%)
             ---
           body-update-action: "prefix"
+
+  test-contains-literal-pattern:
+    name: Test contains() with literal regex pattern
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.title, '([A-Za-z]{2,4}-\\d{1,5})') }}
+    steps:
+      - name: Confirm literal pattern found
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "✓ SUCCESS: contains() found the literal regex string '([A-Za-z]{2,4}-\\d{1,5})'"
+          echo "PR Title: $PR_TITLE"
+          echo "This means the title literally contains the text: ([A-Za-z]{2,4}-\\d{1,5})"
 
   forceSuccess:
     name: Force Success
