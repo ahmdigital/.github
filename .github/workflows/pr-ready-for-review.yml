@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   notify:
-    uses: ahmdigital/ahm-github-workflows/.github/workflows/pr-ready-slack-notification.yml@master
+    uses: ahmdigital/ahm-github-workflows/.github/workflows/pr-ready-slack-notification.yml@46a1c0108e5c5cfbb415bb5c9a20ba76893243b3
     secrets:
       slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
       gh-app-id: ${{ secrets.GH_APPLICATION_ID }}
