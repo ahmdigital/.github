@@ -1,0 +1,17 @@
+name: Notify PR is ready for review
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  notify:
+    uses: ahmdigital/ahm-github-workflows/.github/workflows/pr-ready-slack-notification.yml@master
+    secrets:
+      slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      gh-app-id: ${{ secrets.GH_APPLICATION_ID }}
+      gh-app-private-key: ${{ secrets.GH_APPLICATION_PRIVATE_KEY }}
