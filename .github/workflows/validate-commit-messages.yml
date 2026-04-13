@@ -19,9 +19,10 @@ jobs:
         run: |
           # Valid types are taken explicitly from releaseRules in .releaserc.json.
           # Type must EITHER be wrapped in brackets [type] OR followed by a colon type:
+          # Conventional commit breaking marker is allowed: type!: or type(scope)!:
           # Optionally preceded by a Jira ticket prefix (e.g. SF-5310: )
           TYPES='minor|major|patch|feat|fix|perf|refactor|revert|build|chore|docs|style|test|ci'
-          PATTERN="^([A-Za-z]{2,4}-[0-9]{1,5}:[[:space:]]+)?(\[($TYPES)\](\([^)]+\))?[[:space:]]+|($TYPES)(\([^)]+\))?:[[:space:]]+).+"
+          PATTERN="^([A-Za-z]{2,4}-[0-9]{1,5}:[[:space:]]+)?(\[($TYPES)\](\([^)]+\))?[[:space:]]+|($TYPES)(\([^)]+\))?!?:[[:space:]]+).+"
 
           echo "PR title: $PR_TITLE"
 
@@ -35,7 +36,9 @@ jobs:
             echo ""
             echo "Valid examples:"
             echo "  feat: add new feature"
+            echo "  feat!: introduce breaking API change"
             echo "  fix(auth): resolve login issue"
+            echo "  fix(auth)!: remove deprecated login flow"
             echo "  [minor] improve performance"
             echo "  SF-5310: [minor] add constant for pairing hearing aids"
             echo "  SF-5310: feat(scope): add new feature"
