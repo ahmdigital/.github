@@ -38,7 +38,7 @@ jobs:
             echo "  feat: add new feature"
             echo "  feat!: introduce breaking API change"
             echo "  fix(auth): resolve login issue"
-            echo "  fix(auth)!: remove deprecated login flow"
+            echo "  feat(auth)!: add new auth feature with breaking change"
             echo "  [minor] improve performance"
             echo "  SF-5310: [minor] add constant for pairing hearing aids"
             echo "  SF-5310: feat(scope): add new feature"
