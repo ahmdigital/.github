@@ -17,8 +17,9 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          # Matches the headerPattern in .releaserc.json:
-          # ^(?:[A-Za-z]{2,4}-\d{1,5}:\s+)?\[?(\w+)(?:\([^)]+\))?\]?(?::\s+|\s+)(.+)$
+          # Matches the headerPattern in .releaserc.json.
+          # Type must EITHER be wrapped in brackets [type] OR followed by a colon type:
+          # Optionally preceded by a Jira ticket prefix (e.g. SF-5310: )
           #
           # Valid examples:
           #   feat: add new feature
@@ -27,7 +28,11 @@ jobs:
           #   [minor](scope) add new feature
           #   SF-5310: [minor] add constant for pairing hearing aids
           #   SF-5310: feat(scope): add new feature
-          PATTERN='^([A-Za-z]{2,4}-[0-9]{1,5}:[[:space:]]+)?(\[?[a-zA-Z0-9_]+(\([^)]+\))?\]?)(:[[:space:]]+|[[:space:]]+).+'
+          #
+          # Invalid examples:
+          #   sadd PR title validation workflow  ← bare word with no colon or brackets
+          # Type must EITHER be wrapped in brackets [type] OR be followed by a colon type:
+          PATTERN='^([A-Za-z]{2,4}-[0-9]{1,5}:[[:space:]]+)?(\[[a-zA-Z0-9_]+\](\([^)]+\))?[[:space:]]+|[a-zA-Z0-9_]+(\([^)]+\))?:[[:space:]]+).+'
 
           echo "PR title: $PR_TITLE"
 
