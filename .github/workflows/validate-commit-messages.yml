@@ -44,5 +44,3 @@ jobs:
             echo "  SF-5310: feat(scope): add new feature"
             exit 1
           fi
-
-
