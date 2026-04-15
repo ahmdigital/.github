@@ -42,3 +42,7 @@ jobs:
             echo "  SF-5310: feat(scope): add new feature"
             exit 1
           fi
+          
+          echo ""
+          echo "📖 For more information, see the Conventional Commits documentation:"
+          echo "  https://medibank.atlassian.net/wiki/spaces/AHM/pages/1969062105/Commits+-+Conventional+Commits"
