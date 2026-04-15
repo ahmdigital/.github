@@ -1,4 +1,4 @@
-name: Validate PR Title
+name: Validate PR Conventional Commit Standards
 
 on:
   pull_request:
@@ -9,8 +9,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  validate-pr-title:
-    name: Validate PR Conventional Commit Standard
+  validate-pr-conventions:
     runs-on: ubuntu-latest
     env:
       TYPES: 'feat|fix|perf|refactor|revert|build|chore|docs|style|test|ci'
@@ -63,7 +62,6 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-
           # Check if there's only one commit
           COMMIT_COUNT=$(gh pr view $PR_NUMBER --json commits --jq '.commits | length')
           echo "Number of commits in PR: $COMMIT_COUNT"
