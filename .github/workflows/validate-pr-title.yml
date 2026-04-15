@@ -28,6 +28,9 @@ jobs:
 
           if echo "$PR_TITLE" | grep -qE "$PATTERN"; then
             echo "✅ PR title is valid"
+            echo ""
+            echo "📖 For more information, see the Conventional Commits documentation:"
+            echo "  https://medibank.atlassian.net/wiki/spaces/AHM/pages/1969062105/Commits+-+Conventional+Commits"
           else
             echo "❌ PR title does not match the required format."
             echo ""
@@ -40,5 +43,8 @@ jobs:
             echo "  feat(auth)!: add new auth feature with breaking change"
             echo "  fix(auth): resolve login issue"
             echo "  SF-5310: feat(scope): add new feature"
+            echo ""
+            echo "📖 For more information, see the Conventional Commits documentation:"
+            echo "  https://medibank.atlassian.net/wiki/spaces/AHM/pages/1969062105/Commits+-+Conventional+Commits"
             exit 1
           fi
