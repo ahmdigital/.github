@@ -32,6 +32,8 @@ jobs:
           # Conventional commit breaking marker is allowed: type!: or type(scope)!:
           # Optionally preceded by a Jira ticket prefix (e.g. SF-5310: )
 
+          PATTERN=$(echo "$PATTERN" | sed "s/\$TYPES/$TYPES/g")
+
           echo "PR title: $PR_TITLE"
 
           if echo "$PR_TITLE" | grep -qE "$PATTERN"; then
@@ -68,6 +70,8 @@ jobs:
           echo "Number of commits in PR: $COMMIT_COUNT"
 
           if [ "$COMMIT_COUNT" -eq 1 ]; then
+            PATTERN=$(echo "$PATTERN" | sed "s/\$TYPES/$TYPES/g")
+
             echo "ℹ️  Single commit detected - validating commit message..."
             echo ""
             echo "ℹ️  Why validate single commits?"
