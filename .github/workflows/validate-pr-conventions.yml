@@ -1,0 +1,107 @@
+name: Validate PR Conventional Commit Standards
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-pr-conventions:
+    runs-on: ubuntu-latest
+    env:
+      TYPES: 'feat|fix|perf|refactor|revert|build|chore|docs|style|test|ci'
+      PATTERN: '^([A-Za-z]{2,4}-[0-9]{1,5}:[[:space:]]+)?($TYPES)(\([^)]+\))?!?:[[:space:]]+.+'
+      DOCS_LINK: 'https://medibank.atlassian.net/wiki/spaces/AHM/pages/1969062105/Commits+-+Conventional+Commits'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # Valid types are taken explicitly from releaseRules in .releaserc.json.
+          # Type must be followed by a colon type:
+          # Conventional commit breaking marker is allowed: type!: or type(scope)!:
+          # Optionally preceded by a Jira ticket prefix (e.g. SF-5310: )
+
+          PATTERN=$(echo "$PATTERN" | sed "s/\$TYPES/$TYPES/g")
+
+          echo "PR title: $PR_TITLE"
+
+          if echo "$PR_TITLE" | grep -qE "$PATTERN"; then
+            echo "✅ PR title is valid"
+            echo ""
+            echo "📖 For more information, see the Conventional Commits documentation:"
+            echo "  $DOCS_LINK"
+          else
+            echo "❌ PR title does not match the required format."
+            echo ""
+            echo "Expected format (matching .releaserc.json headerPattern):"
+            echo "  [Jira ticket: ] <type>[(<scope>)][!]: <subject>"
+            echo ""
+            echo "Valid examples:"
+            echo "  feat: add new feature"
+            echo "  feat!: introduce breaking API change"
+            echo "  feat(auth)!: add new auth feature with breaking change"
+            echo "  fix(auth): resolve login issue"
+            echo "  SF-5310: feat(scope): add new feature"
+            echo ""
+            echo "📖 For more information, see the Conventional Commits documentation:"
+            echo "  $DOCS_LINK"
+            exit 1
+          fi
+
+      - name: Validate commit message (if PR has single commit only)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if there's only one commit
+          COMMIT_COUNT=$(gh pr view $PR_NUMBER --json commits --jq '.commits | length')
+          echo "Number of commits in PR: $COMMIT_COUNT"
+
+          if [ "$COMMIT_COUNT" -eq 1 ]; then
+            PATTERN=$(echo "$PATTERN" | sed "s/\$TYPES/$TYPES/g")
+
+            echo "ℹ️  Single commit detected - validating commit message..."
+            echo ""
+            echo "ℹ️  Why validate single commits?"
+            echo "    When a PR has a single commit, GitHub uses that commit message directly as the"
+            echo "    merge commit message (no squashing). Multiple commits are squashed using the PR title."
+            echo "    Therefore, single commits must follow the conventional commit standard to ensure"
+            echo "    semantic-release can properly analyze the commit and determine the correct version bump."
+            echo ""
+            COMMIT_MESSAGE=$(gh pr view $PR_NUMBER --json commits --jq '.commits[0].messageHeadline')
+            echo "Commit message: $COMMIT_MESSAGE"
+            
+            if echo "$COMMIT_MESSAGE" | grep -qE "$PATTERN"; then
+              echo "✅ Commit message is valid"
+              echo ""
+              echo "📖 For more information, see the Conventional Commits documentation:"
+              echo "  $DOCS_LINK"
+            else
+              echo "❌ Commit message does not match the required format."
+              echo ""
+              echo "Expected format (matching .releaserc.json headerPattern):"
+              echo "  [Jira ticket: ] <type>[(<scope>)][!]: <subject>"
+              echo ""
+              echo "Valid examples:"
+              echo "  feat: add new feature"
+              echo "  feat!: introduce breaking API change"
+              echo "  feat(auth)!: add new auth feature with breaking change"
+              echo "  fix(auth): resolve login issue"
+              echo "  SF-5310: feat(scope): add new feature"
+              echo ""
+              echo "📖 For more information, see the Conventional Commits documentation:"
+              echo "  $DOCS_LINK"
+              exit 1
+            fi
+          else
+            echo "ℹ️  Multiple commits detected - skipping individual commit validation"
+          fi
