@@ -25,9 +25,9 @@ jobs:
             ---
           body-update-action: prefix
 
-  merge-group-success:
-    name: Merge Group Success
-    if: ${{ github.event_name == 'merge_group' }}
+  # Required status check for merge queue; GitHub needs at least one job to trigger on merge_group events
+  merge-group:
+    if: github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     steps:
-      - run: true
+      - run: echo "✅ Merge queue check passed"
