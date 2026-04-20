@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   validate-pr-conventions:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     env:
       TYPES: 'feat|fix|perf|refactor|revert|build|chore|docs|style|test|ci'
