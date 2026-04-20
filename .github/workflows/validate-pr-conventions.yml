@@ -3,6 +3,7 @@ name: Validate PR Conventional Commit Standards
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
+  merge_group:
 
 permissions:
   contents: read
