@@ -24,10 +24,3 @@ jobs:
             Jira ticket: [%headbranch%](https://medibank.atlassian.net/browse/%headbranch%)
             ---
           body-update-action: prefix
-
-  # Required status check for merge queue; GitHub needs at least one job to trigger on merge_group events
-  merge-group:
-    if: github.event_name == 'merge_group'
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "✅ Merge queue check passed"
