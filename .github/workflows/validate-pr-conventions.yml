@@ -127,3 +127,62 @@ jobs:
           else
             echo "ℹ️  Multiple commits detected - skipping individual commit validation"
           fi
+
+      - name: Validate breaking change consistency
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          # Check for breaking change marker in title (!)
+          HAS_BREAKING_MARKER=false
+          if echo "$PR_TITLE" | grep -qE '!:'; then
+            HAS_BREAKING_MARKER=true
+          fi
+
+          # Check for BREAKING CHANGE or BREAKING CHANGES in body
+          HAS_BREAKING_FOOTER=false
+          if echo "$PR_BODY" | grep -qiE 'BREAKING\s+CHANGE'; then
+            HAS_BREAKING_FOOTER=true
+          fi
+
+          # Validate consistency
+          if [ "$HAS_BREAKING_MARKER" = true ] && [ "$HAS_BREAKING_FOOTER" = false ]; then
+            echo "❌ Breaking change declared in title but not documented in PR description."
+            echo ""
+            echo "The '!' marker in the title indicates a breaking change, but 'BREAKING CHANGE/S' footer is missing."
+            echo ""
+            echo "💡 How to fix this:"
+            echo ""
+            echo "  Add a breaking change footer to your PR description:"
+            echo ""
+            echo "  BREAKING CHANGES:\n -<description of what broke and how to migrate> \n -<additional breaking changes if needed>"
+            echo ""
+            echo "📖 For more information, see the Conventional Commits documentation:"
+            echo "  $DOCS_LINK"
+            exit 1
+          elif [ "$HAS_BREAKING_MARKER" = false ] && [ "$HAS_BREAKING_FOOTER" = true ]; then
+            echo "❌ Breaking change documented in PR description but not declared in title."
+            echo ""
+            echo "The 'BREAKING CHANGE' footer is present, but the title is missing the '!' breaking change marker."
+            echo ""
+            echo "💡 How to fix this:"
+            echo ""
+            echo "  Update the PR title to include the '!' marker before the colon:"
+            echo ""
+            echo "  <type>!: <subject>"
+            echo "  Example: feat!: remove legacy API endpoint"
+            echo ""
+            echo "  Or if it's a scoped change:"
+            echo "  <type>(<scope>)!: <subject>"
+            echo "  Example: feat(auth)!: change authentication flow"
+            echo ""
+            echo "📖 For more information, see the Conventional Commits documentation:"
+            echo "  $DOCS_LINK"
+            exit 1
+          elif [ "$HAS_BREAKING_MARKER" = true ] && [ "$HAS_BREAKING_FOOTER" = true ]; then
+            echo "✅ Breaking change is properly declared in both title and description"
+            echo ""
+            echo "📖 For more information, see the Conventional Commits documentation:"
+            echo "  $DOCS_LINK"
+          fi
+
