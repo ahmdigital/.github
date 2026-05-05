@@ -1,4 +1,4 @@
-name: Validate PR Conventional Commit Standards
+name: Enforce PR Conventional Commit Standards
 
 on:
   pull_request:
@@ -6,12 +6,58 @@ on:
   merge_group:
 
 permissions:
-  contents: read
-  pull-requests: read
+  contents: write
+  pull-requests: write
 
 jobs:
+  normalize-reverts:
+    name: Normalise Revert Commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check and amend revert commits
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the last commit message and hash
+          LAST_MSG=$(git log -1 --pretty=%B)
+          LAST_HASH=$(git log -1 --pretty=%H)
+          
+          # Check if it matches GitHub's revert format: Revert "..." (#123)
+          if [[ $LAST_MSG =~ ^Revert\ \"(.*)\"\ \(\#[0-9]+\)?$ ]]; then
+            ORIGINAL="${BASH_REMATCH[1]}"
+            NEW_MSG="revert: $ORIGINAL"
+            
+            echo "🔄 Detected GitHub revert commit"
+            echo "Original message: $LAST_MSG"
+            echo "New message: $NEW_MSG"
+            
+            # Append commit hash as a link to the PR body
+            COMMIT_LINK="https://github.com/${{ github.repository }}/commit/$LAST_HASH"
+            UPDATED_BODY=$(printf "%s\n\nReverts %s" "${{ github.event.pull_request.body }}" "$COMMIT_LINK")
+
+            # Update the PR body
+            echo "📝 Updating PR body..."
+            gh pr edit $PR_NUMBER --body "$UPDATED_BODY"
+            echo "✅ PR body updated with commit link"
+            
+            # Then update the commit message
+            git commit --amend -m "$NEW_MSG"
+            git push --force-with-lease
+            
+            echo "✅ Commit message normalized to conventional commit format"
+          else
+            echo "ℹ️ Last commit is not a GitHub revert, no action needed"
+          fi
+
   validate-pr-conventions:
-    if: github.event_name == 'pull_request'
+    name: Validate PR Conventions
+    needs: [normalize-reverts]
     runs-on: ubuntu-latest
     env:
       TYPES: 'feat|fix|perf|refactor|revert|build|chore|docs|style|test|ci'
