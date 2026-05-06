@@ -23,45 +23,28 @@ jobs:
       - name: Check and amend revert commits
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get the last commit message and hash
-          LAST_MSG=$(git log -1 --pretty=%B)
-          LAST_HASH=$(git log -1 --pretty=%H)
-          
-          echo "🔍 Current PR title: $PR_TITLE"
+          echo "🔍 PR title: $PR_TITLE"
           
           # Check if it matches GitHub's revert format: Revert "..." (#123)
-          if [[ $LAST_MSG =~ ^Revert\ \"(.*)\"(\ \(\#([0-9]+)\))?$ ]]; then
+          if [[ $PR_TITLE =~ ^Revert\ \"(.*)\"(\ \(\#([0-9]+)\))?$ ]]; then
             ORIGINAL="${BASH_REMATCH[1]}"
             NEW_MSG="revert: $ORIGINAL"
             
             echo "🔄 Detected GitHub revert commit"
-            echo "Original message: $LAST_MSG"
+            echo "Original message: $PR_TITLE"
             echo "New message: $NEW_MSG"
-            
-            # Append commit hash as a link to the PR body
-            COMMIT_LINK="https://github.com/${{ github.repository }}/commit/$LAST_HASH"
-            UPDATED_BODY=$(printf "%s\n\nReverts %s" "$PR_BODY" "$COMMIT_LINK")
-
+          
             # Update the PR title to match the new commit message
             echo "📝 Updating PR title to: $NEW_MSG"
             gh pr edit $PR_NUMBER --title "$NEW_MSG"
             echo "✅ PR title updated"
-
-            # Update the PR body
-            echo "📝 Updating PR body..."
-            gh pr edit $PR_NUMBER --body "$UPDATED_BODY"
-            echo "✅ PR body updated with commit link"
             
-            # Then update the commit message
-            git commit --amend -m "$NEW_MSG"
-            git push --force-with-lease
-            
-            echo "✅ Commit message normalized to conventional commit format"
+            echo "✅ Revert commit normalized to conventional commit format in PR title"
           else
-            echo "ℹ️ Last commit is not a GitHub revert, no action needed"
+            echo "ℹ️ PR title is not a GitHub revert, no action needed"
           fi
 
   validate-pr-conventions:
@@ -115,73 +98,74 @@ jobs:
             exit 1
           fi
 
-      - name: Validate commit message (if PR has single commit only)
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Check if there's only one commit
-          COMMIT_COUNT=$(gh pr view $PR_NUMBER --json commits --jq '.commits | length')
-          echo "Number of commits in PR: $COMMIT_COUNT"
-
-          if [ "$COMMIT_COUNT" -eq 1 ]; then
-            PATTERN=$(echo "$PATTERN" | sed "s/\$TYPES/$TYPES/g")
-
-            echo "ℹ️  Single commit detected - validating commit message..."
-            echo ""
-            echo "ℹ️  Why validate single commits?"
-            echo "    When a PR has a single commit, GitHub uses that commit message directly as the"
-            echo "    merge commit message (no squashing). Multiple commits are squashed using the PR title."
-            echo "    Therefore, single commits must follow the conventional commit standard to ensure"
-            echo "    semantic-release can properly analyze the commit and determine the correct version bump."
-            echo ""
-            COMMIT_MESSAGE=$(gh pr view $PR_NUMBER --json commits --jq '.commits[0].messageHeadline')
-            echo "Commit message: $COMMIT_MESSAGE"
-            
-            if echo "$COMMIT_MESSAGE" | grep -qE "$PATTERN"; then
-              echo "✅ Commit message is valid"
-              echo ""
-              echo "📖 For more information, see the Conventional Commits documentation:"
-              echo "  $DOCS_LINK"
-            else
-              echo "❌ Commit message does not match the required format."
-              echo ""
-              echo "Expected format (matching .releaserc.json headerPattern):"
-              echo "  [Jira ticket: ] <type>[(<scope>)][!]: <subject>"
-              echo ""
-              echo "Valid examples:"
-              echo "  feat: add new feature"
-              echo "  feat!: introduce breaking API change"
-              echo "  feat(auth)!: add new auth feature with breaking change"
-              echo "  fix(auth): resolve login issue"
-              echo "  SF-5310: feat(scope): add new feature"
-              echo ""
-              echo "💡 How to fix this:"
-              echo ""
-              echo "  Option 1: Push Additional Commits"
-              echo "    Simply push another commit to this PR with a proper conventional commit message"
-              echo "    (This will result in multiple commits being squashed using the PR title)"
-              echo ""
-              echo "  Option 2: Amend the Commit Message (Recommended for Single Commits)"
-              echo "    git commit --amend"
-              echo "    # Update the commit message to follow the format above"
-              echo "    git push --force-with-lease"
-              echo ""
-              echo "  Option 3: Interactive Rebase"
-              echo "    git rebase -i HEAD~<commits_to_rebase_from_parent>"
-              echo "    # Specifically this branch has $COMMIT_COUNT commits to parent (on remote).
-              echo "    # Therefore: git rebase -i HEAD~$COMMIT_COUNT"
-              echo "    # Change 'pick' to 'reword' on the commit line"
-              echo "    # Update the commit message in the editor"
-              echo "    git push --force-with-lease"
-              echo ""
-              echo "📖 For more information, see the Conventional Commits documentation:"
-              echo "  $DOCS_LINK"
-              exit 1
-            fi
-          else
-            echo "ℹ️  Multiple commits detected - skipping individual commit validation"
-          fi
+#      Note: Temporarily removed as squash merges prevent this step from being needed
+#      - name: Validate commit message (if PR has single commit only)
+#        env:
+#          PR_NUMBER: ${{ github.event.pull_request.number }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          # Check if there's only one commit
+#          COMMIT_COUNT=$(gh pr view $PR_NUMBER --json commits --jq '.commits | length')
+#          echo "Number of commits in PR: $COMMIT_COUNT"
+#
+#          if [ "$COMMIT_COUNT" -eq 1 ]; then
+#            PATTERN=$(echo "$PATTERN" | sed "s/\$TYPES/$TYPES/g")
+#
+#            echo "ℹ️  Single commit detected - validating commit message..."
+#            echo ""
+#            echo "ℹ️  Why validate single commits?"
+#            echo "    When a PR has a single commit, GitHub uses that commit message directly as the"
+#            echo "    merge commit message (no squashing). Multiple commits are squashed using the PR title."
+#            echo "    Therefore, single commits must follow the conventional commit standard to ensure"
+#            echo "    semantic-release can properly analyze the commit and determine the correct version bump."
+#            echo ""
+#            COMMIT_MESSAGE=$(gh pr view $PR_NUMBER --json commits --jq '.commits[0].messageHeadline')
+#            echo "Commit message: $COMMIT_MESSAGE"
+#
+#            if echo "$COMMIT_MESSAGE" | grep -qE "$PATTERN"; then
+#              echo "✅ Commit message is valid"
+#              echo ""
+#              echo "📖 For more information, see the Conventional Commits documentation:"
+#              echo "  $DOCS_LINK"
+#            else
+#              echo "❌ Commit message does not match the required format."
+#              echo ""
+#              echo "Expected format (matching .releaserc.json headerPattern):"
+#              echo "  [Jira ticket: ] <type>[(<scope>)][!]: <subject>"
+#              echo ""
+#              echo "Valid examples:"
+#              echo "  feat: add new feature"
+#              echo "  feat!: introduce breaking API change"
+#              echo "  feat(auth)!: add new auth feature with breaking change"
+#              echo "  fix(auth): resolve login issue"
+#              echo "  SF-5310: feat(scope): add new feature"
+#              echo ""
+#              echo "💡 How to fix this:"
+#              echo ""
+#              echo "  Option 1: Push Additional Commits"
+#              echo "    Simply push another commit to this PR with a proper conventional commit message"
+#              echo "    (This will result in multiple commits being squashed using the PR title)"
+#              echo ""
+#              echo "  Option 2: Amend the Commit Message (Recommended for Single Commits)"
+#              echo "    git commit --amend"
+#              echo "    # Update the commit message to follow the format above"
+#              echo "    git push --force-with-lease"
+#              echo ""
+#              echo "  Option 3: Interactive Rebase"
+#              echo "    git rebase -i HEAD~<commits_to_rebase_from_parent>"
+#              echo "    # Specifically this branch has $COMMIT_COUNT commits to parent (on remote).
+#              echo "    # Therefore: git rebase -i HEAD~$COMMIT_COUNT"
+#              echo "    # Change 'pick' to 'reword' on the commit line"
+#              echo "    # Update the commit message in the editor"
+#              echo "    git push --force-with-lease"
+#              echo ""
+#              echo "📖 For more information, see the Conventional Commits documentation:"
+#              echo "  $DOCS_LINK"
+#              exit 1
+#            fi
+#          else
+#            echo "ℹ️  Multiple commits detected - skipping individual commit validation"
+#          fi
 
       - name: Validate breaking change consistency
         env:
