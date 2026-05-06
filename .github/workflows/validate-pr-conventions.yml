@@ -10,12 +10,13 @@ permissions:
   pull-requests: write
 
 jobs:
-  normalize-reverts:
+  normalise-reverts:
     name: Normalise Revert Commits
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        # Release 6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: 0
 
@@ -29,8 +30,10 @@ jobs:
           LAST_MSG=$(git log -1 --pretty=%B)
           LAST_HASH=$(git log -1 --pretty=%H)
           
+          echo "🔍 Current PR title: $PR_TITLE"
+          
           # Check if it matches GitHub's revert format: Revert "..." (#123)
-          if [[ $LAST_MSG =~ ^Revert\ \"(.*)\"\ \(\#[0-9]+\)?$ ]]; then
+          if [[ $LAST_MSG =~ ^Revert\ \"(.*)\"(\ \(\#([0-9]+)\))?$ ]]; then
             ORIGINAL="${BASH_REMATCH[1]}"
             NEW_MSG="revert: $ORIGINAL"
             
@@ -41,6 +44,11 @@ jobs:
             # Append commit hash as a link to the PR body
             COMMIT_LINK="https://github.com/${{ github.repository }}/commit/$LAST_HASH"
             UPDATED_BODY=$(printf "%s\n\nReverts %s" "$PR_BODY" "$COMMIT_LINK")
+
+            # Update the PR title to match the new commit message
+            echo "📝 Updating PR title to: $NEW_MSG"
+            gh pr edit $PR_NUMBER --title "$NEW_MSG"
+            echo "✅ PR title updated"
 
             # Update the PR body
             echo "📝 Updating PR body..."
@@ -58,7 +66,7 @@ jobs:
 
   validate-pr-conventions:
     name: Validate PR Conventions
-    needs: [normalize-reverts]
+    needs: [normalise-reverts]
     runs-on: ubuntu-latest
     env:
       TYPES: 'feat|fix|perf|refactor|revert|build|chore|docs|style|test|ci'
