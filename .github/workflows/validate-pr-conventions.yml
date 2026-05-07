@@ -6,7 +6,7 @@ on:
   merge_group:
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
@@ -27,22 +27,22 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "🔍 PR title: $PR_TITLE"
-          
+
           # Check if it matches GitHub's revert format: Revert "..." (#123)
           if [[ $PR_TITLE =~ ^Revert\ \"(.*)\"(\ \(\#([0-9]+)\))?$ ]]; then
             ORIGINAL="${BASH_REMATCH[1]}"
             NEW_MSG="revert: $ORIGINAL"
-            
+
             echo "🔄 Detected GitHub revert commit"
             echo "Original message: $PR_TITLE"
             echo "New message: $NEW_MSG"
-          
+
             # Update the PR title to match the new commit message
             echo "📝 Updating PR title to: $NEW_MSG"
             gh pr edit $PR_NUMBER --title "$NEW_MSG"
             echo "✅ PR title updated"
-            
-            echo "✅ Revert commit normalized to conventional commit format in PR title"
+
+            echo "✅ Revert commit normalised to conventional commit format in PR title"
           else
             echo "ℹ️ PR title is not a GitHub revert, no action needed"
           fi
@@ -194,7 +194,7 @@ jobs:
             echo ""
             echo "  Add a breaking change footer to your PR description:"
             echo ""
-            echo "  BREAKING CHANGES:\n -<description of what broke and how to migrate> \n -<additional breaking changes if needed>"
+            echo -e "  BREAKING CHANGES:\n -<description of what broke and how to migrate>\n -<additional breaking changes if needed>"
             echo ""
             echo "📖 For more information, see the Conventional Commits documentation:"
             echo "  $DOCS_LINK"
