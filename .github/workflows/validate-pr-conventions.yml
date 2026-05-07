@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   normalise-reverts:
+    if: github.event_name == 'pull_request'
     name: Normalise Revert Commits
     runs-on: ubuntu-latest
     steps:
@@ -49,6 +50,7 @@ jobs:
 
   validate-pr-conventions:
     name: Validate PR Conventions
+    if: github.event_name == 'pull_request'
     needs: [normalise-reverts]
     runs-on: ubuntu-latest
     env:
