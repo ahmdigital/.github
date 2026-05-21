@@ -14,7 +14,9 @@ jobs:
     if: >
       ${{ github.event_name == 'pull_request' &&
          !contains(github.event.pull_request.body || '', 'Jira ticket: ') &&
-         !startsWith(github.event.pull_request.head.ref, 'revert-') }}
+         !startsWith(github.event.pull_request.head.ref, 'revert-') &&
+         !startsWith(github.event.pull_request.head.ref, 'dependabot/') &&
+         !startsWith(github.event.pull_request.head.ref, 'copilot/') }}
     runs-on: ubuntu-latest
     steps:
       # Release 2.0.0
