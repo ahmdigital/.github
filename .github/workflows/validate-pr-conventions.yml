@@ -182,7 +182,7 @@ jobs:
 
           # Check for BREAKING CHANGE or BREAKING CHANGES in body
           HAS_BREAKING_FOOTER=false
-          if echo "$PR_BODY" | grep -qiE 'BREAKING\s+CHANGE'; then
+          if echo "$PR_BODY" | grep -qE 'BREAKING\s+CHANGE'; then
             HAS_BREAKING_FOOTER=true
           fi
 
