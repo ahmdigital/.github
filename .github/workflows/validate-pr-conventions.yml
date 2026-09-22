@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TYPES: 'feat|fix|perf|refactor|revert|build|chore|docs|style|test|ci'
-      PATTERN: '^([A-Za-z]{2,4}-[0-9]{1,5}:[[:space:]]+)?($TYPES)(\([^)]+\))?!?:[[:space:]]+.+'
+      PATTERN: '^([A-Za-z]{2,4}-[0-9]{1,5}:[[:space:]]+)?($TYPES)(\([^)]+\))?!?:[[:space:]]+(.+)$'
       DOCS_LINK: 'https://medibank.atlassian.net/wiki/spaces/AHM/pages/1969062105/Commits+-+Conventional+Commits'
     steps:
       - name: Checkout code
@@ -77,11 +77,9 @@ jobs:
 
           echo "PR title: $PR_TITLE"
 
-          if echo "$PR_TITLE" | grep -qE "$PATTERN"; then
-            echo "✅ PR title is valid"
-            echo ""
-            echo "📖 For more information, see the Conventional Commits documentation:"
-            echo "  $DOCS_LINK"
+          if [[ $PR_TITLE =~ $PATTERN ]]; then
+            SUBJECT="${BASH_REMATCH[4]}"
+            echo "✅ PR title format is valid"
           else
             echo "❌ PR title does not match the required format."
             echo ""
@@ -99,9 +97,6 @@ jobs:
             echo "  $DOCS_LINK"
             exit 1
           fi
-
-          SUBJECT=$(echo "$PR_TITLE" | sed -E \
-            "s/^([A-Za-z]{2,4}-[0-9]{1,5}:[[:space:]]+)?(${TYPES})(\([^)]+\))?!?:[[:space:]]+//")
 
           if ! echo "$SUBJECT" | grep -qE '^[a-z]'; then
             echo "❌ PR title description must start with a lowercase letter."
@@ -156,6 +151,8 @@ jobs:
             echo "This is a warning only and will not fail the workflow."
           fi
 
+          echo ""
+          echo "✅ PR title is valid"
           echo ""
           echo "📖 For more information, see the Conventional Commits documentation:"
           echo "  $DOCS_LINK"
