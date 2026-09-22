@@ -75,7 +75,7 @@ jobs:
 
           PATTERN=$(echo "$PATTERN" | sed "s/\$TYPES/$TYPES/g")
 
-          echo "PR title: $PR_TITLE"
+          echo "PR titlez: $PR_TITLE"
           
           printf 'Exact PR title: <%s>\n' "$PR_TITLE"
           printf 'Shell representation: %q\n' "$PR_TITLE"
