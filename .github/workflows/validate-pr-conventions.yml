@@ -117,6 +117,21 @@ jobs:
             echo "  $DOCS_LINK"
             exit 1
           fi
+          
+          if echo "$PR_TITLE" | grep -qE '(\.{3}|…)[[:space:]]*$'; then
+            echo "❌ PR title must not end with an ellipsis."
+            echo ""
+            echo "Current title:"
+            echo "  $PR_TITLE"
+            echo ""
+            echo "Example:"
+            echo "  Incorrect: feat: add imperative validation..."
+            echo "  Correct:   feat: add imperative validation"
+            echo ""
+            echo "📖 For more information, see the Conventional Commits documentation:"
+            echo "  $DOCS_LINK"
+            exit 1
+          fi
 
           # Imperative mood is difficult to validate reliably, so only warn for
           # common non-imperative verb forms rather than failing the workflow.
