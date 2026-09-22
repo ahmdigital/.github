@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TYPES: 'feat|fix|perf|refactor|revert|build|chore|docs|style|test|ci'
-      PATTERN: '^([A-Za-z]{2,4}-[0-9]{1,5}:[[:space:]]+)?($TYPES)(\([^)]+\))?!?:[[:space:]]+.+'
+      PATTERN: '^([A-Za-z]{2,4}-[0-9]{1,5}:[[:space:]]+)?($TYPES)(\([^)]+\))?!?:[[:space:]]+(.+)$'
       DOCS_LINK: 'https://medibank.atlassian.net/wiki/spaces/AHM/pages/1969062105/Commits+-+Conventional+Commits'
     steps:
       - name: Checkout code
@@ -77,11 +77,9 @@ jobs:
 
           echo "PR title: $PR_TITLE"
 
-          if echo "$PR_TITLE" | grep -qE "$PATTERN"; then
-            echo "✅ PR title is valid"
-            echo ""
-            echo "📖 For more information, see the Conventional Commits documentation:"
-            echo "  $DOCS_LINK"
+          if [[ $PR_TITLE =~ $PATTERN ]]; then
+            SUBJECT="${BASH_REMATCH[4]}"
+            echo "✅ PR title format is valid"
           else
             echo "❌ PR title does not match the required format."
             echo ""
@@ -100,74 +98,133 @@ jobs:
             exit 1
           fi
 
-#      Note: Temporarily removed as squash merges prevent this step from being needed
-#      - name: Validate commit message (if PR has single commit only)
-#        env:
-#          PR_NUMBER: ${{ github.event.pull_request.number }}
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: |
-#          # Check if there's only one commit
-#          COMMIT_COUNT=$(gh pr view $PR_NUMBER --json commits --jq '.commits | length')
-#          echo "Number of commits in PR: $COMMIT_COUNT"
-#
-#          if [ "$COMMIT_COUNT" -eq 1 ]; then
-#            PATTERN=$(echo "$PATTERN" | sed "s/\$TYPES/$TYPES/g")
-#
-#            echo "ℹ️  Single commit detected - validating commit message..."
-#            echo ""
-#            echo "ℹ️  Why validate single commits?"
-#            echo "    When a PR has a single commit, GitHub uses that commit message directly as the"
-#            echo "    merge commit message (no squashing). Multiple commits are squashed using the PR title."
-#            echo "    Therefore, single commits must follow the conventional commit standard to ensure"
-#            echo "    semantic-release can properly analyze the commit and determine the correct version bump."
-#            echo ""
-#            COMMIT_MESSAGE=$(gh pr view $PR_NUMBER --json commits --jq '.commits[0].messageHeadline')
-#            echo "Commit message: $COMMIT_MESSAGE"
-#
-#            if echo "$COMMIT_MESSAGE" | grep -qE "$PATTERN"; then
-#              echo "✅ Commit message is valid"
-#              echo ""
-#              echo "📖 For more information, see the Conventional Commits documentation:"
-#              echo "  $DOCS_LINK"
-#            else
-#              echo "❌ Commit message does not match the required format."
-#              echo ""
-#              echo "Expected format (matching .releaserc.json headerPattern):"
-#              echo "  [Jira ticket: ] <type>[(<scope>)][!]: <subject>"
-#              echo ""
-#              echo "Valid examples:"
-#              echo "  feat: add new feature"
-#              echo "  feat!: introduce breaking API change"
-#              echo "  feat(auth)!: add new auth feature with breaking change"
-#              echo "  fix(auth): resolve login issue"
-#              echo "  SF-5310: feat(scope): add new feature"
-#              echo ""
-#              echo "💡 How to fix this:"
-#              echo ""
-#              echo "  Option 1: Push Additional Commits"
-#              echo "    Simply push another commit to this PR with a proper conventional commit message"
-#              echo "    (This will result in multiple commits being squashed using the PR title)"
-#              echo ""
-#              echo "  Option 2: Amend the Commit Message (Recommended for Single Commits)"
-#              echo "    git commit --amend"
-#              echo "    # Update the commit message to follow the format above"
-#              echo "    git push --force-with-lease"
-#              echo ""
-#              echo "  Option 3: Interactive Rebase"
-#              echo "    git rebase -i HEAD~<commits_to_rebase_from_parent>"
-#              echo "    # Specifically this branch has $COMMIT_COUNT commits to parent (on remote).
-#              echo "    # Therefore: git rebase -i HEAD~$COMMIT_COUNT"
-#              echo "    # Change 'pick' to 'reword' on the commit line"
-#              echo "    # Update the commit message in the editor"
-#              echo "    git push --force-with-lease"
-#              echo ""
-#              echo "📖 For more information, see the Conventional Commits documentation:"
-#              echo "  $DOCS_LINK"
-#              exit 1
-#            fi
-#          else
-#            echo "ℹ️  Multiple commits detected - skipping individual commit validation"
-#          fi
+          if ! echo "$SUBJECT" | grep -qE '^[a-z]'; then
+            echo "❌ PR title description must start with a lowercase letter."
+            echo ""
+            echo "Current description:"
+            echo "  $SUBJECT"
+            echo ""
+            echo "Example:"
+            echo "  Incorrect: fix: Resolve login issue"
+            echo "  Correct:   fix: resolve login issue"
+            echo ""
+            echo "📖 For more information, see the Conventional Commits documentation:"
+            echo "  $DOCS_LINK"
+            exit 1
+          fi
+          
+          if echo "$PR_TITLE" | grep -qE '(\.{3}|…)[[:space:]]*$'; then
+            echo "❌ PR title must not end with an ellipsis."
+            echo ""
+            echo "Current title:"
+            echo "  $PR_TITLE"
+            echo ""
+            echo "Example:"
+            echo "  Incorrect: feat: add imperative validation..."
+            echo "  Correct:   feat: add imperative validation"
+            echo ""
+            echo "📖 For more information, see the Conventional Commits documentation:"
+            echo "  $DOCS_LINK"
+            exit 1
+          fi
+
+          # Imperative mood is difficult to validate reliably, so only warn for
+          # common non-imperative verb forms rather than failing the workflow.
+          FIRST_WORD=$(echo "$SUBJECT" | grep -oE '^[[:alpha:]]+' || true)
+
+          if echo "$FIRST_WORD" | grep -qiE \
+            '^(added|adding|adds|fixed|fixing|fixes|updated|updating|updates|changed|changing|changes|removed|removing|removes|implemented|implementing|implements|created|creating|creates|resolved|resolving|resolves|refactored|refactoring|refactors)$'; then
+            echo "::warning title=PR title is not using imperative mood::Consider using an imperative verb/description, such as 'add', 'fix', 'update', 'change', 'remove' or 'refactor'. Current description: $SUBJECT"
+            echo ""
+            echo "⚠️ PR title is not using imperative mood."
+            echo ""
+            echo "Prefer wording that completes:"
+            echo "  If applied, this commit will..."
+            echo ""
+            echo "Examples:"
+            echo "  Avoid: feat: adds member validation"
+            echo "  Use:   feat: add member validation"
+            echo ""
+            echo "  Avoid: fix: fixed login error"
+            echo "  Use:   fix: resolve login error"
+            echo ""
+            echo "This is a warning only and will not fail the workflow."
+          fi
+
+          echo ""
+          echo "✅ PR title is valid"
+          echo ""
+          echo "📖 For more information, see the Conventional Commits documentation:"
+          echo "  $DOCS_LINK"
+
+      #      Note: Temporarily removed as squash merges prevent this step from being needed
+      #      - name: Validate commit message (if PR has single commit only)
+      #        env:
+      #          PR_NUMBER: ${{ github.event.pull_request.number }}
+      #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #        run: |
+      #          # Check if there's only one commit
+      #          COMMIT_COUNT=$(gh pr view $PR_NUMBER --json commits --jq '.commits | length')
+      #          echo "Number of commits in PR: $COMMIT_COUNT"
+      #
+      #          if [ "$COMMIT_COUNT" -eq 1 ]; then
+      #            PATTERN=$(echo "$PATTERN" | sed "s/\$TYPES/$TYPES/g")
+      #
+      #            echo "ℹ️  Single commit detected - validating commit message..."
+      #            echo ""
+      #            echo "ℹ️  Why validate single commits?"
+      #            echo "    When a PR has a single commit, GitHub uses that commit message directly as the"
+      #            echo "    merge commit message (no squashing). Multiple commits are squashed using the PR title."
+      #            echo "    Therefore, single commits must follow the conventional commit standard to ensure"
+      #            echo "    semantic-release can properly analyze the commit and determine the correct version bump."
+      #            echo ""
+      #            COMMIT_MESSAGE=$(gh pr view $PR_NUMBER --json commits --jq '.commits[0].messageHeadline')
+      #            echo "Commit message: $COMMIT_MESSAGE"
+      #
+      #            if echo "$COMMIT_MESSAGE" | grep -qE "$PATTERN"; then
+      #              echo "✅ Commit message is valid"
+      #              echo ""
+      #              echo "📖 For more information, see the Conventional Commits documentation:"
+      #              echo "  $DOCS_LINK"
+      #            else
+      #              echo "❌ Commit message does not match the required format."
+      #              echo ""
+      #              echo "Expected format (matching .releaserc.json headerPattern):"
+      #              echo "  [Jira ticket: ] <type>[(<scope>)][!]: <subject>"
+      #              echo ""
+      #              echo "Valid examples:"
+      #              echo "  feat: add new feature"
+      #              echo "  feat!: introduce breaking API change"
+      #              echo "  feat(auth)!: add new auth feature with breaking change"
+      #              echo "  fix(auth): resolve login issue"
+      #              echo "  SF-5310: feat(scope): add new feature"
+      #              echo ""
+      #              echo "💡 How to fix this:"
+      #              echo ""
+      #              echo "  Option 1: Push Additional Commits"
+      #              echo "    Simply push another commit to this PR with a proper conventional commit message"
+      #              echo "    (This will result in multiple commits being squashed using the PR title)"
+      #              echo ""
+      #              echo "  Option 2: Amend the Commit Message (Recommended for Single Commits)"
+      #              echo "    git commit --amend"
+      #              echo "    # Update the commit message to follow the format above"
+      #              echo "    git push --force-with-lease"
+      #              echo ""
+      #              echo "  Option 3: Interactive Rebase"
+      #              echo "    git rebase -i HEAD~<commits_to_rebase_from_parent>"
+      #              echo "    # Specifically this branch has $COMMIT_COUNT commits to parent (on remote)."
+      #              echo "    # Therefore: git rebase -i HEAD~$COMMIT_COUNT"
+      #              echo "    # Change 'pick' to 'reword' on the commit line"
+      #              echo "    # Update the commit message in the editor"
+      #              echo "    git push --force-with-lease"
+      #              echo ""
+      #              echo "📖 For more information, see the Conventional Commits documentation:"
+      #              echo "  $DOCS_LINK"
+      #              exit 1
+      #            fi
+      #          else
+      #            echo "ℹ️  Multiple commits detected - skipping individual commit validation"
+      #          fi
 
       - name: Validate breaking change consistency
         env:
@@ -226,4 +283,3 @@ jobs:
             echo "📖 For more information, see the Conventional Commits documentation:"
             echo "  $DOCS_LINK"
           fi
-
