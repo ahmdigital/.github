@@ -98,7 +98,8 @@ jobs:
             exit 1
           fi
 
-          if ! echo "$SUBJECT" | grep -qE '^[a-z]'; then
+          # Note: allow commits to start with a number temporarily for "chore(release): <number>"
+          if ! echo "$SUBJECT" | grep -qE '^[a-z0-9]'; then
             echo "❌ PR title description must start with a lowercase letter."
             echo ""
             echo "Current description:"
